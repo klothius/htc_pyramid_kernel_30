@@ -43,7 +43,7 @@
  * The PLL hardware is capable of 384MHz to 1512MHz. The L_VALs
  * used for calibration should respect these limits. */
 #define L_VAL_SCPLL_CAL_MIN	0x08 /* =  432 MHz with 27MHz source */
-#define L_VAL_SCPLL_CAL_MAX	0x24 /* = 1994 MHz with 27MHz source */
+#define L_VAL_SCPLL_CAL_MAX	0x22 
 
 #define MAX_VDD_SC		1400000 /* uV */
 #define MIN_VDD_SC		 700000 /* uV */
@@ -201,7 +201,7 @@ static struct clkctl_l2_speed l2_freq_tbl_v2[] = {
 };
 
 #define L2(x) (&l2_freq_tbl_v2[(x)])
-static struct clkctl_acpu_speed acpu_freq_tbl_1836mhz[] = {
+static struct clkctl_acpu_speed acpu_freq_tbl_oc[] = {
   { {1, 1}, 192000, ACPU_PLL_8, 3, 1, 0, 0, L2(1), 800000, 0x03006000},
   { {0, 0}, MAX_AXI, ACPU_AFAB, 1, 0, 0, 0, L2(0), 825000, 0x03006000},
   { {1, 1}, 384000, ACPU_PLL_8, 3, 0, 0, 0, L2(1), 825000, 0x03006000},
@@ -877,8 +877,8 @@ static unsigned int __init select_freq_plan(void)
 		}
 	}
 
-    max_khz = 1944000;
-    acpu_freq_tbl = acpu_freq_tbl_1836mhz;
+    max_khz = 1836000;
+    acpu_freq_tbl = acpu_freq_tbl_oc;
 
 	/* Truncate the table based to max_khz. */
 	for (f = acpu_freq_tbl; f->acpuclk_khz != 0; f++) {
