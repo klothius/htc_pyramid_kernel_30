@@ -34,7 +34,7 @@
 
 #ifdef CONFIG_FB_MSM_TRIPLE_BUFFER
 #define MSM_FB_PRIM_BUF_SIZE \
-    (roundup((960 * 540 * 4), 4096) * 4) /* 4 bpp x 3 pages */ //0x600000
+    (roundup((960 * 540 * 4), 4096) * 4) /* 4 bpp x 3 pages */ //0x7C0000
 #else
 #define MSM_FB_PRIM_BUF_SIZE \
     (roundup((960 * 540 * 4), 4096) * 2) /* 4 bpp x 2 pages */ 
@@ -59,16 +59,16 @@
 /* Note: must be multiple of 4096 */
 #define MSM_FB_SIZE (MSM_FB_PRIM_BUF_SIZE) //+ MSM_FB_EXT_BUF_SIZE)
 
-#define MSM_OVERLAY_BLT_SIZE   0x700000
+#define MSM_OVERLAY_BLT_SIZE   0x500000
 
 #define MSM_ION_HEAP_NUM	7
 //#define MSM_ION_AUDIO_SIZE	MSM_PMEM_AUDIO_SIZE //LPA
-#define MSM_ION_SF_SIZE 	0x2800000 /* 80 Mbytes */
+#define MSM_ION_SF_SIZE 	0x28F0000 /* 80 Mbytes */
 #define MSM_ION_CAMERA_SIZE	0x100000//0x2000000
 #define MSM_ION_MM_FW_SIZE	0x200000 /* (2MB) */
 #define MSM_ION_MM_SIZE		0x3A00000 /* (54MB) */
 #define MSM_ION_MFC_SIZE	0x100000
-#define MSM_ION_WB_SIZE		0x1D00000 /* 30MB */
+#define MSM_ION_WB_SIZE		0x1E00000 /* 30MB */
 
 //#define MSM_PMEM_SF_SIZE        0x2000000 /* 64 Mbytes */
 //#define MSM_PMEM_ADSP_SIZE	0x239C000
