@@ -230,7 +230,7 @@ static atomic_t msm_rmt_initialized = ATOMIC_INIT(0);
 #define RAMFS_MDM_STORAGE_ID		0x4D4583A1
 /* SSD */
 #define RAMFS_SSD_STORAGE_ID		0x00535344
-#define RAMFS_SHARED_SSD_RAM_BASE	0x42E00000
+#define RAMFS_SHARED_SSD_RAM_BASE	0x40200000
 #define RAMFS_SHARED_SSD_RAM_SIZE	0x2000
 
 static struct rmt_storage_client *rmt_storage_get_client(uint32_t handle)
