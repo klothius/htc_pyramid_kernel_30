@@ -3578,6 +3578,13 @@ static struct memtype_reserve msm8x60_reserve_table[] __initdata = {
 	/* Kernel SMI memory pool should always precede the user space */
 	/* SMI memory pool, as the video core will use offset address */
 	/* from the Firmware base */
+
+	[MEMTYPE_SMI_KERNEL] = {
+		.start	=	KERNEL_SMI_BASE,
+		.limit	=	KERNEL_SMI_SIZE,
+		.size	=	KERNEL_SMI_SIZE,
+		.flags	=	MEMTYPE_FLAGS_FIXED,
+	},
 	
 	/* User space SMI memory pool for video core */
 	/* used for encoder, decoder input & output buffers  */
