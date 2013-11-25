@@ -820,7 +820,7 @@ static struct msm_bus_vectors grp2d0_nominal_vectors[] = {
 		.src = MSM_BUS_MASTER_GRAPHICS_2D_CORE0,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
 		.ab = 0,
-		.ib = KGSL_CONVERT_TO_MBPS(2600),
+		.ib = KGSL_CONVERT_TO_MBPS(2100),
 	},
 };
 
@@ -829,7 +829,7 @@ static struct msm_bus_vectors grp2d0_max_vectors[] = {
 		.src = MSM_BUS_MASTER_GRAPHICS_2D_CORE0,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
 		.ab = 0,
-		.ib = KGSL_CONVERT_TO_MBPS(3348),
+		.ib = KGSL_CONVERT_TO_MBPS(3200),
 	},
 };
 
@@ -868,7 +868,7 @@ static struct msm_bus_vectors grp2d1_nominal_vectors[] = {
 		.src = MSM_BUS_MASTER_GRAPHICS_2D_CORE1,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
 		.ab = 0,
-		.ib = KGSL_CONVERT_TO_MBPS(2600),
+		.ib = KGSL_CONVERT_TO_MBPS(2100),
 	},
 };
 
@@ -877,7 +877,7 @@ static struct msm_bus_vectors grp2d1_max_vectors[] = {
 		.src = MSM_BUS_MASTER_GRAPHICS_2D_CORE1,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
 		.ab = 0,
-		.ib = KGSL_CONVERT_TO_MBPS(3348),
+		.ib = KGSL_CONVERT_TO_MBPS(3200),
 	},
 };
 
@@ -985,7 +985,7 @@ static struct resource kgsl_2d0_resources[] = {
 	{
 		.name = KGSL_2D0_REG_MEMORY,
 		.start = 0x04100000, /* Z180 base address */
-		.end = 0x041005FF,
+		.end = 0x04100FFF,
 		.flags = IORESOURCE_MEM,
 	},
 	{
@@ -1019,7 +1019,7 @@ static struct kgsl_device_platform_data kgsl_2d0_pdata = {
 			.bus_freq = 0,
 		},
 	},
-	.init_level = 4,
+	.init_level = 1,
 	.num_levels = 5,
 	.set_grp_async = NULL,
 	.idle_timeout = HZ/10,
@@ -1044,7 +1044,7 @@ static struct resource kgsl_2d1_resources[] = {
 	{
 		.name = KGSL_2D1_REG_MEMORY,
 		.start = 0x04200000, /* Z180 device 1 base address */
-		.end =   0x042005FF,
+		.end =   0x04200FFF,
 		.flags = IORESOURCE_MEM,
 	},
 	{
@@ -1078,7 +1078,7 @@ static struct kgsl_device_platform_data kgsl_2d1_pdata = {
 			.bus_freq = 0,
 		},
 	},
-	.init_level = 4,
+	.init_level = 1,
 	.num_levels = 5,
 	.set_grp_async = NULL,
 	.idle_timeout = HZ/10,

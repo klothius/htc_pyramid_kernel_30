@@ -79,14 +79,14 @@
 #define MSM_PMEM_AUDIO_BASE	(0x45C00000)
 //#define MSM_ION_WB_BASE		(0x45C00000)
 //#define MSM_ION_SF_BASE		0x40400000//(0x70000000 - MSM_ION_SF_SIZE)
-#define MSM_PMEM_MDP_BASE		0x40200000
+#define MSM_PMEM_MDP_BASE		0x40100000
 #define MSM_FB_BASE             (0x70000000 - MSM_FB_SIZE)//0x42C00000//0x38E30000 //0x6F000000//(0x41000000)  /*MSM_PMEM_AUDIO_BASE is 0x6BACA000*/
                                               /*to avoid alignment,  use 0x6BA00000 - 0xA00000*/
 
 #define MSM_PMEM_KERNEL_EBI1_BASE	(MSM_PMEM_AUDIO_BASE + MSM_PMEM_AUDIO_SIZE)
 
 #define MSM_SMI_BASE          (0x38000000)
-#define MSM_SMI_SIZE          0x3000000
+#define MSM_SMI_SIZE          0x4000000
 
 //#define MSM_SMI_BASE          (0x38600000)
 //#define MSM_SMI_SIZE          0x7200000
@@ -97,7 +97,7 @@
 /* SMI PMEM Region, as the video core will use offset address */
 /* from the Firmware base */
 #define KERNEL_SMI_BASE       (MSM_SMI_BASE)
-#define KERNEL_SMI_SIZE       0x500000
+#define KERNEL_SMI_SIZE       0x400000
 
 /* User space SMI PMEM Region for video core*/
 /* used for encoder, decoder input & output buffers  */
@@ -107,7 +107,7 @@
 #define MSM_PMEM_SMIPOOL_SIZE USER_SMI_SIZE
 
 #define PHY_BASE_ADDR1  0x48000000
-#define SIZE_ADDR1      (0x28000000 - MSM_FB_SIZE)
+#define SIZE_ADDR1      (0x28000000 - MSM_FB_SIZE - 0x100000)
 /* GPIO definition */
 
 /* Direct Keys */
