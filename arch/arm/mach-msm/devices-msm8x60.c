@@ -985,7 +985,7 @@ static struct resource kgsl_2d0_resources[] = {
 	{
 		.name = KGSL_2D0_REG_MEMORY,
 		.start = 0x04100000, /* Z180 base address */
-		.end = 0x04100FFF,
+		.end = 0x0410FFFF,
 		.flags = IORESOURCE_MEM,
 	},
 	{
@@ -1044,7 +1044,7 @@ static struct resource kgsl_2d1_resources[] = {
 	{
 		.name = KGSL_2D1_REG_MEMORY,
 		.start = 0x04200000, /* Z180 device 1 base address */
-		.end =   0x04200FFF,
+		.end =   0x0420FFFF,
 		.flags = IORESOURCE_MEM,
 	},
 	{
