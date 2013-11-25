@@ -1157,55 +1157,7 @@ int __init vm_area_check_early(struct vm_struct *vm)
 
  
 
-  BUG_ON(vmap_ini+/**
-
-+ * vm_area_check_early - check if vmap area is already mapped
-
-+ * @vm: vm_struct to be checked
-
-+ *
-
-+ * This function is used to check if the vmap area has been
-
-+ * mapped already. @vm->addr, @vm->size and @vm->flags should
-
-+ * contain proper values.
-
-+ *
-
-+ */
-
-+int __init vm_area_check_early(struct vm_struct *vm)
-
-+{
-
-+  struct vm_struct *tmp, **p;
-
- 
-
-+  BUG_ON(vmap_initialized);
-
-+  for (p = &vmlist; (tmp = *p) != NULL; p = &tmp->next) {
-
-+    if (tmp->addr >= vm->addr) {
-
-+      if (tmp->addr < vm->addr + vm->size)
-
-+        return 1;
-
-+    } else {
-
-+      if (tmp->addr + tmp->size > vm->addr)
-
-+        return 1;
-
-+    }
-
-+  }
-
-+  return 0;
-
-+}tialized);
+  BUG_ON(vmap_initialized);
 
   for (p = &vmlist; (tmp = *p) != NULL; p = &tmp->next) {
 
@@ -1219,9 +1171,9 @@ int __init vm_area_check_early(struct vm_struct *vm)
 
       if (tmp->addr + tmp->size > vm->addr)
 
-        return 1;
+       return 1;
 
-   }
+    }
 
   }
 
