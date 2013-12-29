@@ -1,4 +1,4 @@
-/* Copyright (c) 2011, Code Aurora Forum. All rights reserved.
+/* Copyright (c) 2011, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -20,7 +20,6 @@
 #include <linux/debugfs.h>
 #include <linux/bitops.h>
 #include <linux/termios.h>
-#include <linux/ratelimit.h>
 #include <mach/usb_bridge.h>
 #include <mach/usb_gadget_xport.h>
 
@@ -629,7 +628,6 @@ static int ghsic_data_port_alloc(unsigned port_num, enum gadget_type gtype)
 	if (!port->wq) {
 		pr_err("%s: Unable to create workqueue:%s\n",
 			__func__, data_bridge_names[port_num]);
-		kfree(port);
 		return -ENOMEM;
 	}
 	port->port_num = port_num;

@@ -1,6 +1,10 @@
-/* linux/arch/arm/mach-msm/board-spade.h
+/* linux/arch/arm/mach-msm/board-pyramid.h
  *
  * Copyright (C) 2010-2011 HTC Corporation.
+ *
+ * Copyright (c) 2013 Sultanxda <sultanxda@gmail.com>
+ * Copyright (c) 2013 Sebastian Sobczyk <sebastiansobczyk@wp.pl>
+ * Copyright (c) 2013 bilalliberty <dominos_liberty @ xda-developers>
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -22,8 +26,6 @@
 #define MSM_RAM_CONSOLE_BASE	MSM_HTC_RAM_CONSOLE_PHYS
 #define MSM_RAM_CONSOLE_SIZE	MSM_HTC_RAM_CONSOLE_SIZE
 
-/* Memory map */
-
 #if defined(CONFIG_CRYPTO_DEV_QCRYPTO) || \
 		defined(CONFIG_CRYPTO_DEV_QCRYPTO_MODULE) || \
 		defined(CONFIG_CRYPTO_DEV_QCEDEV) || \
@@ -32,82 +34,44 @@
 #define QCE_0_BASE		0x18500000
 #endif
 
-#ifdef CONFIG_FB_MSM_TRIPLE_BUFFER
-#define MSM_FB_PRIM_BUF_SIZE \
-    (roundup((960 * 540 * 4), 4096) * 4) /* 4 bpp x 3 pages */ //0x7C0000
-#else
-#define MSM_FB_PRIM_BUF_SIZE \
-    (roundup((960 * 540 * 4), 4096) * 2) /* 4 bpp x 2 pages */ 
-#endif
+/*** Memory map ***/
+#define MSM_ION_HEAP_NUM      4
 
-#ifdef CONFIG_FB_MSM_HDMI_MSM_PANEL
-#define MSM_FB_EXT_BUF_SIZE  \
-    (roundup((1920 * 1080 * 2), 4096) * 2) /* 2 bpp x 1 page */ //0x500000
-#else
-#define MSM_FB_EXT_BUFT_SIZE	0
-#endif
-
-#ifdef CONFIG_FB_MSM_OVERLAY_WRITEBACK
-/* width x height x 3 bpp x 2 frame buffer */
-#define MSM_FB_WRITEBACK_SIZE roundup((960 * 540 * 3 * 2), 4096) 
-#define MSM_FB_WRITEBACK_OFFSET 0
-#else
-#define MSM_FB_WRITEBACK_SIZE	0
-#define MSM_FB_WRITEBACK_OFFSET 0
-#endif
-
-/* Note: must be multiple of 4096 */
-#define MSM_FB_SIZE (0xA00000) //+ MSM_FB_EXT_BUF_SIZE)
-
-#define MSM_OVERLAY_BLT_SIZE   0x2F8000
-
-#define MSM_ION_HEAP_NUM	7
-//#define MSM_ION_AUDIO_SIZE	MSM_PMEM_AUDIO_SIZE //LPA
-//#define MSM_ION_SF_SIZE 	0x2A00000 /* 80 Mbytes */
-//#define MSM_ION_CAMERA_SIZE	0x100000//0x2000000
-//#define MSM_ION_MM_FW_SIZE	0x500000 /* (2MB) */
-//#define MSM_ION_MM_SIZE		0x3D00000 /* (54MB) */
-//#define MSM_ION_MFC_SIZE	0x500000
-//#define MSM_ION_WB_SIZE		0x12FD000 /* 30MB */
-
-#define MSM_PMEM_MDP_SIZE        0x2C00000 /* 64 Mbytes */
-#define MSM_PMEM_ADSP_SIZE	0x1400000
-#define MSM_PMEM_AUDIO_SIZE	0x400000
-#define MSM_PMEM_ADSP_BASE	(USER_SMI_BASE + USER_SMI_SIZE)
-
-#define MSM_OVERLAY_BLT_BASE	(0x46400000)//(38000000 - ION)//(0x46C00000)
-#define MSM_PMEM_AUDIO_BASE	(0x45C00000)
-//#define MSM_ION_WB_BASE		(0x45C00000)
-//#define MSM_ION_SF_BASE		0x40400000//(0x70000000 - MSM_ION_SF_SIZE)
-#define MSM_PMEM_MDP_BASE		0x40100000
-#define MSM_FB_BASE             (0x70000000 - MSM_FB_SIZE)//0x42C00000//0x38E30000 //0x6F000000//(0x41000000)  /*MSM_PMEM_AUDIO_BASE is 0x6BACA000*/
-                                              /*to avoid alignment,  use 0x6BA00000 - 0xA00000*/
-
-#define MSM_PMEM_KERNEL_EBI1_BASE	(MSM_PMEM_AUDIO_BASE + MSM_PMEM_AUDIO_SIZE)
-
-#define MSM_SMI_BASE          (0x38000000)
-#define MSM_SMI_SIZE          0x4000000
-
-//#define MSM_SMI_BASE          (0x38600000)
-//#define MSM_SMI_SIZE          0x7200000
-
-/* Kernel SMI PMEM Region for video core, used for Firmware */
-/* and encoder,decoder scratch buffers */
-/* Kernel SMI PMEM Region Should always precede the user space */
-/* SMI PMEM Region, as the video core will use offset address */
-/* from the Firmware base */
-#define KERNEL_SMI_BASE       (MSM_SMI_BASE)
-#define KERNEL_SMI_SIZE       0x400000
-
-/* User space SMI PMEM Region for video core*/
-/* used for encoder, decoder input & output buffers  */
-#define USER_SMI_BASE         (KERNEL_SMI_BASE + KERNEL_SMI_SIZE)
+// PMEM SMI
+#define MSM_SMI_SIZE          0x3500000
+#define KERNEL_SMI_SIZE       0x000000
 #define USER_SMI_SIZE         (MSM_SMI_SIZE - KERNEL_SMI_SIZE)
-#define MSM_PMEM_SMIPOOL_BASE USER_SMI_BASE
 #define MSM_PMEM_SMIPOOL_SIZE USER_SMI_SIZE
 
+// PMEM
+#define MSM_PMEM_AUDIO_SIZE   0x239000
+#define MSM_PMEM_ADSP_SIZE    0x1400000
+
+// ION SMI
+#define MSM_ION_MM_SIZE       0x2D00000
+#define MSM_SMI_ION_SIZE      0x2D00000
+
+// ION
+#define MSM_ION_WB_SIZE       0x2FD000
+#define MSM_ION_SF_SIZE       0x3200000
+
+// Base addresses
+#define MSM_SMI_BASE          (MSM_ION_MM_BASE+MSM_SMI_ION_SIZE)
+#define KERNEL_SMI_BASE       (MSM_SMI_BASE)
+#define USER_SMI_BASE         (KERNEL_SMI_BASE + KERNEL_SMI_SIZE)
+#define MSM_PMEM_SMIPOOL_BASE USER_SMI_BASE
+#define MSM_ION_MM_BASE       (0x38000000)
+#define MSM_SMI_ION_BASE      (0x38000000)
+#define MSM_ION_WB_BASE       (0x45C00000)
+#define MSM_PMEM_AUDIO_BASE   (0x46400000)
+#define MSM_ION_SF_BASE       (0x40200000)
+#define MSM_PMEM_ADSP_BASE    (0x70000000-MSM_PMEM_ADSP_SIZE)
+
+// Userspace allocation
 #define PHY_BASE_ADDR1  0x48000000
-#define SIZE_ADDR1      (0x28000000 - MSM_FB_SIZE - 0x100000)
+#define SIZE_ADDR1      (MSM_PMEM_ADSP_BASE - PHY_BASE_ADDR1)
+/*** END Memory map ***/
+
 /* GPIO definition */
 
 /* Direct Keys */
@@ -139,6 +103,7 @@
 #define GPIO_LCM_RST_N			(66)
 #define GPIO_LCM_ID			(50)
 
+#define GPIO_LCD_TE        (28)
 /* Audio */
 #define PYRAMID_AUD_CODEC_RST        (67)
 
@@ -153,9 +118,11 @@
 #define PYRAMID_GPIO_BT_RESET_N        (142)
 
 /* USB */
+#define PYRAMID_GPIO_MHL_WAKE_UP        (62)
 #define PYRAMID_GPIO_USB_ID        (63)
 #define PYRAMID_GPIO_MHL_RESET        (70)
 #define PYRAMID_GPIO_MHL_INT        (71)
+#define PYRAMID_GPIO_MHL_USB_EN         (139)
 #define PYRAMID_GPIO_MHL_USB_SWITCH        (99)
 
 /* Camera */
@@ -199,10 +166,14 @@
 #define PYRAMID_AUD_REMO_PRES      PMGPIO(37)
 #define PYRAMID_WIFI_BT_SLEEP_CLK  PMGPIO(38)
 
+extern int panel_type;
 
 int __init pyramid_init_mmc(void);
 void __init pyramid_audio_init(void);
 int __init pyramid_init_keypad(void);
 int __init pyramid_wifi_init(void);
+void pyramid_init_fb(void);
+void pyramid_allocate_fb_region(void);
+void pyramid_mdp_writeback(void);
 
 #endif /* __ARCH_ARM_MACH_MSM_BOARD_PYRAMID_H */

@@ -50,6 +50,11 @@
 #include <linux/android_pmem.h>
 #endif
 
+#ifdef CONFIG_ION_MSM
+#include <linux/ion.h>
+#include <mach/ion.h>
+#endif
+
 #if defined(CONFIG_SMB137B_CHARGER) || defined(CONFIG_SMB137B_CHARGER_MODULE)
 #include <linux/i2c/smb137b.h>
 #endif
@@ -82,7 +87,7 @@
 #ifdef CONFIG_BT
 #include <mach/htc_bdaddress.h>
 #endif
-//#include <mach/htc_usb.h>
+#include <mach/htc_usb.h>
 #include <mach/gpiomux.h>
 #ifdef CONFIG_MSM_DSPS
 #include <mach/msm_dsps.h>
@@ -96,7 +101,7 @@
 #include <mach/htc_headset_8x60.h>
 #include <linux/i2c/isl9519.h>
 #ifdef CONFIG_USB_G_ANDROID
-#include <linux/usb/android.h>
+#include <linux/usb/android_composite.h>
 #include <mach/tpa2051d3.h>
 #include <mach/usbdiag.h>
 #endif
@@ -107,12 +112,12 @@
 #include <mach/rpm-regulator.h>
 #include <mach/restart.h>
 #include <mach/cable_detect.h>
-
+#include <linux/msm_tsens.h>
 
 #include "board-pyramid.h"
 #include "devices.h"
 #include "devices-msm8x60.h"
-#include "cpuidle.h"
+#include <mach/cpuidle.h>
 #include "pm.h"
 #include "pm-boot.h"
 #include "mpm.h"
@@ -134,13 +139,12 @@
 #include <mach/perflock.h>
 #endif
 
-#include <linux/ion.h>
-#include <mach/ion.h>
-
 #ifdef CONFIG_CPU_FREQ_GOV_ONDEMAND_2_PHASE
 int set_two_phase_freq(int cpufreq);
 #endif
-
+#ifdef CONFIG_CPU_FREQ_GOV_INTELLIDEMAND
+int id_set_two_phase_freq(int cpufreq);
+#endif
 #ifdef CONFIG_CPU_FREQ_GOV_BADASS_2_PHASE
 int set_two_phase_freq_badass(int cpufreq);
 #endif
@@ -162,11 +166,6 @@ int set_three_phase_freq_badass(int cpufreq);
 #define PM8901_GPIO_SYS_TO_PM(sys_gpio)		(sys_gpio - PM901_GPIO_BASE)
 #define PM8901_IRQ_BASE				(PM8058_IRQ_BASE + \
 						NR_PMIC8058_IRQS)
-
-int __init pyd_init_panel(struct resource *res, size_t size);
-#ifdef CONFIG_ION_MSM
-static struct platform_device ion_dev;
-#endif
 
 enum {
 	GPIO_EXPANDER_IRQ_BASE  = PM8901_IRQ_BASE + NR_PMIC8901_IRQS,
@@ -494,7 +493,7 @@ static struct regulator_init_data saw_s0_init_data = {
 			.name = "8901_s0",
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE,
 			.min_uV = 700000,
-			.max_uV = 1350000,
+			.max_uV = 1450000,
 		},
 		.consumer_supplies = vreg_consumers_8901_S0,
 		.num_consumer_supplies = ARRAY_SIZE(vreg_consumers_8901_S0),
@@ -505,7 +504,7 @@ static struct regulator_init_data saw_s1_init_data = {
 			.name = "8901_s1",
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE,
 			.min_uV = 700000,
-			.max_uV = 1350000,
+			.max_uV = 1450000,
 		},
 		.consumer_supplies = vreg_consumers_8901_S1,
 		.num_consumer_supplies = ARRAY_SIZE(vreg_consumers_8901_S1),
@@ -643,6 +642,7 @@ static struct msm_ce_hw_support qcrypto_ce_hw_suppport = {
 	.shared_ce_resource = QCE_SHARE_CE_RESOURCE,
 	.hw_key_support = QCE_HW_KEY_SUPPORT,
 	.sha_hmac = QCE_SHA_HMAC_SUPPORT,
+	.bus_scale_table = NULL,
 };
 
 static struct platform_device qcrypto_device = {
@@ -665,6 +665,7 @@ static struct msm_ce_hw_support qcedev_ce_hw_suppport = {
 	.shared_ce_resource = QCE_SHARE_CE_RESOURCE,
 	.hw_key_support = QCE_HW_KEY_SUPPORT,
 	.sha_hmac = QCE_SHA_HMAC_SUPPORT,
+	.bus_scale_table = NULL,
 };
 
 static struct platform_device qcedev_device = {
@@ -1185,7 +1186,7 @@ static void msm_hsusb_vbus_power(bool on)
 static int pyramid_phy_init_seq[] = { 0x06, 0x36, 0x0C, 0x31, 0x31, 0x32, 0x1, 0x0E, 0x1, 0x11, -1 };
 static struct msm_otg_platform_data msm_otg_pdata = {
 	.phy_init_seq		= pyramid_phy_init_seq,
-	.mode			= USB_PERIPHERAL,
+	.mode			= USB_OTG,
 	.otg_control		= OTG_PMIC_CONTROL,
 	.phy_type		= CI_45NM_INTEGRATED_PHY,
 	.vbus_power		= msm_hsusb_vbus_power,
@@ -1258,7 +1259,18 @@ static int usb_diag_update_pid_and_serial_num(uint32_t pid, const char *snum)
 }
 
 static struct android_usb_platform_data android_usb_pdata = {
+	.vendor_id	= 0x0BB4,
+	.product_id	= 0x0c86,
+	.version	= 0x0100,
+	.product_name		= "Android Phone",
+	.manufacturer_name	= "HTC",
+	.num_products = ARRAY_SIZE(usb_products),
+	.products = usb_products,
+	.num_functions = ARRAY_SIZE(usb_functions_all),
+	.functions = usb_functions_all,
 	.update_pid_and_serial_num = usb_diag_update_pid_and_serial_num,
+	.usb_id_pin_gpio = PYRAMID_GPIO_USB_ID,
+	.fserial_init_string = "tty:modem,tty,tty:serial",
 };
 
 static struct platform_device android_usb_device = {
@@ -1583,7 +1595,7 @@ static struct msm_camera_sensor_flash_data flash_s5k3h1gx = {
 
 static struct camera_flash_cfg msm_camera_sensor_flash_cfg = {
 	.low_temp_limit		= 5,
-	.low_cap_limit		= 5,
+	.low_cap_limit		= 1,
 };
 
 static struct msm_camera_sensor_info msm_camera_sensor_s5k3h1gx_data = {
@@ -1873,23 +1885,7 @@ static struct platform_device msm_batt_device = {
 };
 #endif
 
-static unsigned fb_size;
-static int __init fb_size_setup(char *p)
-{
-	fb_size = memparse(p, NULL);
-	return 0;
-}
-early_param("fb_size", fb_size_setup);
-
 #ifdef CONFIG_ANDROID_PMEM
-static unsigned pmem_mdp_size = MSM_PMEM_MDP_SIZE;
-static int __init pmem_mdp_size_setup(char *p)
-{
-	pmem_mdp_size = memparse(p, NULL);
-	return 0;
-}
-early_param("pmem_mdp_size", pmem_mdp_size_setup);
-
 static unsigned pmem_adsp_size = MSM_PMEM_ADSP_SIZE;
 
 static int __init pmem_adsp_size_setup(char *p)
@@ -1909,31 +1905,7 @@ static int __init pmem_audio_size_setup(char *p)
 early_param("pmem_audio_size", pmem_audio_size_setup);
 #endif
 
-static struct resource msm_fb_resources[] = {
-	{
-		.flags  = IORESOURCE_DMA,
-	},
-	/* for overlay write back operation */
-	{
-		.flags  = IORESOURCE_DMA,
-	},
-};
-
 #ifdef CONFIG_ANDROID_PMEM
-#ifndef CONFIG_MSM_MULTIMEDIA_USE_ION
-
-static struct android_pmem_platform_data android_pmem_pdata = {
-	.name = "pmem",
-	.allocator_type = PMEM_ALLOCATORTYPE_ALLORNOTHING,
-	.cached = 1,
-};
-
-static struct platform_device android_pmem_device = {
-	.name = "android_pmem",
-	.id = 0,
-	.dev = {.platform_data = &android_pmem_pdata},
-};
-
 static struct android_pmem_platform_data android_pmem_adsp_pdata = {
 	.name = "pmem_adsp",
 	.allocator_type = PMEM_ALLOCATORTYPE_BITMAP,
@@ -1946,18 +1918,10 @@ static struct platform_device android_pmem_adsp_device = {
 	.dev = { .platform_data = &android_pmem_adsp_pdata },
 };
 
-/*static struct android_pmem_platform_data android_pmem_adsp2_pdata = {
-	.name = "pmem_adsp2",
-	.allocator_type = PMEM_ALLOCATORTYPE_BITMAP,
-	.cached = 0,
-};
-
-static struct platform_device android_pmem_adsp2_device = {
-	.name = "android_pmem",
-	.id = 3,
-	.dev = { .platform_data = &android_pmem_adsp2_pdata },
-};*/
-#endif
+static void __init reserve_mdp_memory(void)
+{
+pyramid_mdp_writeback();
+}
 
 static struct android_pmem_platform_data android_pmem_audio_pdata = {
 	.name = "pmem_audio",
@@ -2011,26 +1975,86 @@ void *pmem_setup_smi_region(void)
 	return (void *)msm_bus_scale_register_client(&smi_client_pdata);
 }
 
-int request_smi_region(void *data)
+#ifdef CONFIG_ION_MSM
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+static int request_smi_region(void *data)
 {
-	int bus_id = (int) data;
+	pmem_request_smi_region(data);
 
-	msm_bus_scale_client_update_request(bus_id, 1);
 	return 0;
 }
 
-int release_smi_region(void *data)
+static int release_smi_region(void *data)
 {
-	int bus_id = (int) data;
+	pmem_release_smi_region(data);
 
-	msm_bus_scale_client_update_request(bus_id, 0);
 	return 0;
 }
 
-void *setup_smi_region(void)
-{
-	return (void *)msm_bus_scale_register_client(&smi_client_pdata);
-}
+static struct ion_cp_heap_pdata cp_mm_ion_pdata = {
+	.permission_type = IPT_TYPE_MM_CARVEOUT,
+	.align = PAGE_SIZE,
+	.request_region = request_smi_region,
+	.release_region = release_smi_region,
+	.setup_region = pmem_setup_smi_region,
+};
+
+static struct ion_cp_heap_pdata cp_wb_ion_pdata = {
+	.permission_type = IPT_TYPE_MDP_WRITEBACK,
+	.align = PAGE_SIZE,
+};
+
+static struct ion_co_heap_pdata co_ion_pdata = {
+	.adjacent_mem_id = INVALID_HEAP_ID,
+	.align = PAGE_SIZE,
+};
+
+#endif
+static struct ion_platform_data ion_pdata = {
+	.nr = MSM_ION_HEAP_NUM,
+	.heaps = {
+		{
+			.id	= ION_SYSTEM_HEAP_ID,
+			.type	= ION_HEAP_TYPE_SYSTEM,
+			.name	= ION_VMALLOC_HEAP_NAME,
+		},
+		{
+			.id	= ION_CP_MM_HEAP_ID,
+			.type	= ION_HEAP_TYPE_CP,
+			.name	= ION_MM_HEAP_NAME,
+			//.base	= MSM_ION_MM_BASE,
+			.size	= MSM_ION_MM_SIZE,
+			.memory_type = ION_SMI_TYPE,
+			.extra_data = (void *) &cp_mm_ion_pdata,
+		},
+		{
+			.id	= ION_SF_HEAP_ID,
+			.type	= ION_HEAP_TYPE_CARVEOUT,
+			.name	= ION_SF_HEAP_NAME,
+			.base	= MSM_ION_SF_BASE,
+			.size	= MSM_ION_SF_SIZE,
+			.memory_type = ION_EBI_TYPE,
+			.extra_data = (void *) &co_ion_pdata,
+		},
+		{
+			.id	= ION_CP_WB_HEAP_ID,
+			.type	= ION_HEAP_TYPE_CP,
+			.name	= ION_WB_HEAP_NAME,
+			.base	= MSM_ION_WB_BASE,
+			.size	= MSM_ION_WB_SIZE,
+			.memory_type = ION_EBI_TYPE,
+			.extra_data = (void *) &cp_wb_ion_pdata,
+		},
+#endif
+	}
+};
+
+static struct platform_device ion_dev = {
+	.name = "ion-msm",
+	.id = 1,
+	.dev = { .platform_data = &ion_pdata },
+};
+#endif
 
 #ifdef CONFIG_FB_MSM_HDMI_MSM_PANEL
 static struct resource hdmi_msm_resources[] = {
@@ -2081,157 +2105,22 @@ static struct platform_device *hdmi_devices[] __initdata = {
 static struct android_pmem_platform_data android_pmem_smipool_pdata = {
 	.name = "pmem_smipool",
 	.allocator_type = PMEM_ALLOCATORTYPE_BITMAP,
-	.cached = 0,
+	.cached = 1,
 	.memory_type = MEMTYPE_SMI,
 	.request_region = pmem_request_smi_region,
 	.release_region = pmem_release_smi_region,
 	.setup_region = pmem_setup_smi_region,
-	.map_on_demand = 0,
+	.map_on_demand = 1,
 };
 static struct platform_device android_pmem_smipool_device = {
 	.name = "android_pmem",
 	.id = 7,
 	.dev = { .platform_data = &android_pmem_smipool_pdata },
 };
-#endif
-
-#ifdef CONFIG_ION_MSM
-#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
-static struct ion_co_heap_pdata co_ion_pdata = {
-  .adjacent_mem_id = INVALID_HEAP_ID,
-  .align = PAGE_SIZE,
-};
-
-static struct ion_cp_heap_pdata cp_mm_ion_pdata = {
-	.permission_type = IPT_TYPE_MM_CARVEOUT,
-	.align = PAGE_SIZE,
-	.request_region = request_smi_region,
-	.release_region = release_smi_region,
-	.setup_region = setup_smi_region,
-};
-
-static struct ion_cp_heap_pdata cp_mfc_ion_pdata = {
-	.permission_type = IPT_TYPE_MFC_SHAREDMEM,
-	.align = PAGE_SIZE,
-	.request_region = request_smi_region,
-	.release_region = release_smi_region,
-	.setup_region = setup_smi_region,
-};
-
-static struct ion_cp_heap_pdata cp_wb_ion_pdata = {
-	.permission_type = IPT_TYPE_MDP_WRITEBACK,
-	.align = PAGE_SIZE,
-};
-
-static struct ion_co_heap_pdata fw_co_ion_pdata = {
-	.adjacent_mem_id = ION_CP_MM_HEAP_ID,
-	.align = SZ_128K,
-};
-
-#endif
-#endif
-
-/*
- * These heaps are listed in the order they will be allocated.
- * Don't swap the order unless you know what you are doing!
- */
-#ifdef CONFIG_MSM_ION
-static struct ion_platform_data ion_pdata = {
-	.nr = MSM_ION_HEAP_NUM,
-	.heaps = {
-		{
-			.id	= ION_SYSTEM_HEAP_ID,
-			.type	= ION_HEAP_TYPE_SYSTEM,
-			.name	= ION_VMALLOC_HEAP_NAME,
-		},
-#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
-		{
-			.id	= ION_CP_MM_HEAP_ID,
-			.type	= ION_HEAP_TYPE_CP,
-			.name	= ION_MM_HEAP_NAME,
-			.size	= MSM_ION_MM_SIZE,
-			.memory_type = ION_SMI_TYPE,
-			.extra_data = (void *) &cp_mm_ion_pdata,
-		},
-		{
-			.id	= ION_MM_FIRMWARE_HEAP_ID,
-			.type	= ION_HEAP_TYPE_CARVEOUT,
-			.name	= ION_MM_FIRMWARE_HEAP_NAME,
-			.size	= MSM_ION_MM_FW_SIZE,
-			.memory_type = ION_SMI_TYPE,
-			.extra_data = (void *) &fw_co_ion_pdata,
-		},
-		{
-			.id	= ION_CP_MFC_HEAP_ID,
-			.type	= ION_HEAP_TYPE_CP,
-			.name	= ION_MFC_HEAP_NAME,
-			.size	= MSM_ION_MFC_SIZE,
-			.memory_type = ION_SMI_TYPE,
-			.extra_data = (void *) &cp_mfc_ion_pdata,
-		},
-		{
-			.id	= ION_SF_HEAP_ID,
-			.type	= ION_HEAP_TYPE_CARVEOUT,
-			.name	= ION_SF_HEAP_NAME,
-			.size	= MSM_ION_SF_SIZE,
-			.base 	= MSM_ION_SF_BASE,
-			.memory_type = ION_EBI_TYPE,
-			.extra_data = (void *)&co_ion_pdata,
-		},
-		{
-			.id	= ION_CAMERA_HEAP_ID,
-			.type	= ION_HEAP_TYPE_CARVEOUT,
-			.name	= ION_CAMERA_HEAP_NAME,
-			.size	= MSM_ION_CAMERA_SIZE,
-			.memory_type = ION_SMI_TYPE,
-			.extra_data = &co_ion_pdata,
-		},
-		{
-			.id	= ION_CP_WB_HEAP_ID,
-			.type	= ION_HEAP_TYPE_CARVEOUT,
-			.name	= ION_WB_HEAP_NAME,
-			.size	= MSM_ION_WB_SIZE,
-			//.base	= MSM_ION_WB_BASE,
-			.memory_type = ION_SMI_TYPE,
-			.extra_data = (void *) &cp_wb_ion_pdata,
-		},
-		
-		/*{
-			.id	= ION_AUDIO_HEAP_ID,
-			.type	= ION_HEAP_TYPE_CARVEOUT,
-			.name	= ION_AUDIO_HEAP_NAME,
-			.size	= MSM_ION_AUDIO_SIZE,
-			.memory_type = ION_EBI_TYPE,
-			.extra_data = (void *)&co_ion_pdata,
-		},*/
-#endif
-	}
-};
-
-static struct platform_device ion_dev = {
-  .name = "ion-msm",
-  .id = 1,
-  .dev = { .platform_data = &ion_pdata },
-};
-#endif
 
 static void __init msm8x60_allocate_memory_regions(void)
 {
-	unsigned long size;
-
-	size = MSM_FB_SIZE;
-	msm_fb_resources[0].start = MSM_FB_BASE;
-	msm_fb_resources[0].end = msm_fb_resources[0].start + size - 1;
-	pr_info("allocating %lu bytes at 0x%p (0x%lx physical) for fb\n",
-		size, __va(MSM_FB_BASE), (unsigned long) MSM_FB_BASE);
-
-#ifdef CONFIG_FB_MSM_OVERLAY_WRITEBACK
-	size = MSM_OVERLAY_BLT_SIZE;
-	msm_fb_resources[1].start = MSM_OVERLAY_BLT_BASE;
-	msm_fb_resources[1].end = msm_fb_resources[1].start + size - 1;
-	pr_info("allocating %lu bytes at 0x%p (0x%lx physical) for overlay\n",
-		size, __va(MSM_OVERLAY_BLT_BASE), (unsigned long) MSM_OVERLAY_BLT_BASE);
-#endif
+	pyramid_allocate_fb_region();
 }
 
 static int pyramid_ts_cy8c_set_rst(int on)
@@ -2291,7 +2180,7 @@ static int pyramid_ts_cy8c_reset(void)
 	pyramid_ts_cy8c_set_rst(0);
 	msleep(10);
 	pyramid_ts_cy8c_set_rst(1);
-	msleep(100);
+	msleep(200);
 
 	return 0;
 }
@@ -2455,6 +2344,9 @@ static struct platform_device pyramid_rfkill = {
 	.id = -1,
 };
 #endif
+
+
+
 
 #if defined(CONFIG_MSM_RPM_LOG) || defined(CONFIG_MSM_RPM_LOG_MODULE)
 
@@ -2917,14 +2809,12 @@ static struct platform_device *early_devices[] __initdata = {
 #endif
 };
 
-
-//static struct tsens_platform_data pyr_tsens_pdata  = {
-	//	.tsens_factor		= 1000,
-	//	.hw_type		= MSM_8660,
-	//	.tsens_num_sensor	= 6,
-	//	.slope 			= 702,
-//};
-
+/*static struct tsens_platform_data pyr_tsens_pdata  = {
+		.tsens_factor		= 1000,
+		.hw_type		= MSM_8660,
+		.tsens_num_sensor	= 6,
+		.slope 			= 702,
+};*/
 
 
 static struct platform_device msm_tsens_device = {
@@ -3264,7 +3154,7 @@ static struct pm8058_led_config pm_led_config[] = {
 		.duites_size = 8,
 		.duty_time_ms = 32,
 		.lut_flag = PM_PWM_LUT_RAMP_UP | PM_PWM_LUT_PAUSE_HI_EN,
-		.out_current = 2,
+		.out_current = 8,
 	},
 
 };
@@ -3489,15 +3379,12 @@ static struct platform_device *pyramid_devices[] __initdata = {
 #endif
 
 	&msm_device_otg,
+	&msm_device_hsusb_host,
 #ifdef CONFIG_BATTERY_MSM
 	&msm_batt_device,
 #endif
 #ifdef CONFIG_ANDROID_PMEM
-#ifndef CONFIG_MSM_MULTIMEDIA_USE_ION
-	&android_pmem_device,
 	&android_pmem_adsp_device,
-	//&android_pmem_adsp2_device,
-#endif
 	&android_pmem_audio_device,
 	&android_pmem_smipool_device,
 #endif
@@ -3565,11 +3452,11 @@ static struct platform_device *pyramid_devices[] __initdata = {
 #ifdef CONFIG_BT
 	&pyramid_rfkill,
 #endif
+#ifdef CONFIG_ION_MSM
+	&ion_dev,
+#endif
 	&pm8058_leds,
 	&msm8660_device_watchdog,
-#ifdef CONFIG_ION_MSM
-        &ion_dev,
-#endif
 };
 
 static struct memtype_reserve msm8x60_reserve_table[] __initdata = {
@@ -3578,14 +3465,12 @@ static struct memtype_reserve msm8x60_reserve_table[] __initdata = {
 	/* Kernel SMI memory pool should always precede the user space */
 	/* SMI memory pool, as the video core will use offset address */
 	/* from the Firmware base */
-
 	[MEMTYPE_SMI_KERNEL] = {
 		.start	=	KERNEL_SMI_BASE,
 		.limit	=	KERNEL_SMI_SIZE,
 		.size	=	KERNEL_SMI_SIZE,
 		.flags	=	MEMTYPE_FLAGS_FIXED,
 	},
-	
 	/* User space SMI memory pool for video core */
 	/* used for encoder, decoder input & output buffers  */
 	[MEMTYPE_SMI] = {
@@ -3593,10 +3478,17 @@ static struct memtype_reserve msm8x60_reserve_table[] __initdata = {
 		.limit	=	USER_SMI_SIZE,
 		.flags	=	MEMTYPE_FLAGS_FIXED,
 	},
+	[MEMTYPE_SMI_ION] = {
+		.start	=	MSM_SMI_ION_BASE,
+		.limit	=	MSM_SMI_ION_SIZE,
+		.flags	=	MEMTYPE_FLAGS_FIXED,
+	},
+	[MEMTYPE_EBI0] = {
+		.flags	=	MEMTYPE_FLAGS_1M_ALIGN,
+	},
 	[MEMTYPE_EBI1] = {
 		.flags	=	MEMTYPE_FLAGS_1M_ALIGN,
 	},
-
 };
 
 #ifdef CONFIG_ANDROID_PMEM
@@ -3612,24 +3504,30 @@ static void __init size_pmem_device(struct android_pmem_platform_data *pdata, un
 static void __init size_pmem_devices(void)
 {
 #ifdef CONFIG_ANDROID_PMEM
-#ifndef CONFIG_MSM_MULTIMEDIA_USE_ION
-	size_pmem_device(&android_pmem_pdata, MSM_PMEM_MDP_BASE, pmem_mdp_size);
 	size_pmem_device(&android_pmem_adsp_pdata, MSM_PMEM_ADSP_BASE, pmem_adsp_size);
-	//size_pmem_device(&android_pmem_adsp2_pdata, MSM_PMEM_ADSP2_BASE, pmem_adsp2_size);
-#endif
 	size_pmem_device(&android_pmem_smipool_pdata, MSM_PMEM_SMIPOOL_BASE, MSM_PMEM_SMIPOOL_SIZE);
 	size_pmem_device(&android_pmem_audio_pdata, MSM_PMEM_AUDIO_BASE, MSM_PMEM_AUDIO_SIZE);
 #endif
 }
 
+#ifdef CONFIG_ION_MSM
+static void __init reserve_ion_memory(void)
+{
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+   //msm8x60_reserve_table[MEMTYPE_EBI1].size += MSM_ION_SF_SIZE;
+   msm8x60_reserve_table[MEMTYPE_SMI_ION].size += MSM_ION_MM_SIZE;
+ #endif
+}
+#endif
+
 #ifdef CONFIG_ANDROID_PMEM
 static void __init reserve_memory_for(struct android_pmem_platform_data *p)
 {
 	/* If we have set a pre-defined PMEM start base,
-	 * no need to reserve it in system again.*/
-	 
+	 * no need to reserve it in system again.
+	 */
 	if (p->start == 0) {
- 		pr_info("%s: reserve %lu bytes from memory %d for %s.\r\n", __func__, p->size, p->memory_type, p->name);
+		pr_info("%s: reserving %lx bytes in memory pool for %s.\n", __func__, p->size, p->name);
 		msm8x60_reserve_table[p->memory_type].size += p->size;
 	}
 }
@@ -3638,38 +3536,25 @@ static void __init reserve_memory_for(struct android_pmem_platform_data *p)
 static void __init reserve_pmem_memory(void)
 {
 #ifdef CONFIG_ANDROID_PMEM
-#ifndef CONFIG_MSM_MULTIMEDIA_USE_ION
-	reserve_memory_for(&android_pmem_pdata);
 	reserve_memory_for(&android_pmem_adsp_pdata);
-	//reserve_memory_for(&android_pmem_adsp2_pdata);
-#endif
 	reserve_memory_for(&android_pmem_smipool_pdata);
 	reserve_memory_for(&android_pmem_audio_pdata);
 #endif
 }
-#ifdef CONFIG_ION_MSM
-static void __init reserve_ion_memory(void)
-{
 
-	//msm8x60_reserve_table[MEMTYPE_EBI1].size += MSM_ION_SF_SIZE;
-	msm8x60_reserve_table[MEMTYPE_SMI].size += MSM_ION_MM_FW_SIZE;
-	msm8x60_reserve_table[MEMTYPE_SMI].size += MSM_ION_MM_SIZE;
-	msm8x60_reserve_table[MEMTYPE_SMI].size += MSM_ION_MFC_SIZE;
-	msm8x60_reserve_table[MEMTYPE_SMI].size += MSM_ION_CAMERA_SIZE;
-	msm8x60_reserve_table[MEMTYPE_SMI].size += MSM_ION_WB_SIZE;
-	//msm8x60_reserve_table[MEMTYPE_EBI1].size += MSM_ION_AUDIO_SIZE;
+static void __init reserve_mdp_memory(void);
 
-}
-#endif
 static void __init msm8x60_calculate_reserve_sizes(void)
 {
-
 	size_pmem_devices();
 	reserve_pmem_memory();
-  	//reserve_ion_memory();
+#ifdef CONFIG_ION_MSM
+	reserve_ion_memory();
+#endif
+	reserve_mdp_memory();
 }
 
-static int msm8x60_paddr_to_memtype(unsigned int paddr)
+static int msm8x60_paddr_to_memtype(phys_addr_t paddr)
 {
 	if (paddr >= 0x40000000 && paddr < 0x70000000)
 		return MEMTYPE_EBI1;
@@ -4770,7 +4655,6 @@ static struct i2c_board_info i2c_isl29029_devices[] = {
 	},
 };
 
-
 static struct mpu3050_platform_data mpu3050_data = {
 	.int_config = 0x10,
 	.orientation = { -1, 0, 0,
@@ -4828,7 +4712,6 @@ static struct mpu3050_platform_data mpu3050_data_XB = {
 							0, 0, -1 },
 	},
 };
-
 
 static struct i2c_board_info __initdata mpu3050_GSBI10_boardinfo[] = {
 	{
@@ -4911,7 +4794,6 @@ static struct i2c_registry msm8x60_i2c_devices[] __initdata = {
 		msm_i2c_gsbi7_mhl_sii9234_info,
 		ARRAY_SIZE(msm_i2c_gsbi7_mhl_sii9234_info),
 	},
-
 #endif
 #endif
 	{
@@ -5801,7 +5683,6 @@ static uint32_t msm_rpm_get_swfi_latency(void)
 static unsigned int pyramid_emmcslot_type = MMC_TYPE_MMC;
 static struct mmc_platform_data msm8x60_sdc1_data = {
 	.ocr_mask       = MMC_VDD_27_28 | MMC_VDD_28_29,
-	/*.translate_vdd  = msm_sdcc_setup_power,*/
 #ifdef CONFIG_MMC_MSM_SDC1_8_BIT_SUPPORT
 	.mmc_bus_width  = MMC_CAP_8_BIT_DATA,
 #else
@@ -6245,6 +6126,13 @@ static struct msm_board_data pyramid_board_data __initdata = {
 void pyramid_add_usb_devices(void)
 {
 	printk(KERN_INFO "%s rev: %d\n", __func__, system_rev);
+	android_usb_pdata.products[0].product_id =
+			android_usb_pdata.product_id;
+
+
+	/* diag bit set */
+	if (get_radio_flag() & 0x20000)
+		android_usb_pdata.diag_init = 1;
 
 	msm_device_gadget_peripheral.dev.parent = &msm_device_otg.dev;
 	platform_device_register(&msm_device_gadget_peripheral);
@@ -6253,6 +6141,7 @@ void pyramid_add_usb_devices(void)
 
 static int __init board_serialno_setup(char *serialno)
 {
+	android_usb_pdata.serial_number = serialno;
 	return 1;
 }
 __setup("androidboot.serialno=", board_serialno_setup);
@@ -6370,6 +6259,9 @@ static void __init msm8x60_init(struct msm_board_data *board_data)
 #ifdef CONFIG_CPU_FREQ_GOV_ONDEMAND_2_PHASE
 	set_two_phase_freq(1134000);
 #endif
+#ifdef CONFIG_CPU_FREQ_GOV_INTELLIDEMAND
+	id_set_two_phase_freq(1134000);
+#endif
 
 #ifdef CONFIG_CPU_FREQ_GOV_BADASS_2_PHASE
 	set_two_phase_freq_badass(CONFIG_CPU_FREQ_GOV_BADASS_2_PHASE_FREQ);
@@ -6429,7 +6321,7 @@ static void __init msm8x60_init(struct msm_board_data *board_data)
 	platform_device_register(&msm_gsbi1_qup_spi_device);
 #endif
 
-	pyd_init_panel(msm_fb_resources, ARRAY_SIZE(msm_fb_resources));
+	pyramid_init_fb();
 	pyramid_ts_cy8c_set_system_rev(system_rev);
 	fixup_i2c_configs();
 	register_i2c_devices();

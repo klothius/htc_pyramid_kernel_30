@@ -1,5 +1,5 @@
 # bcmdhd
-DHDCFLAGS = -Wall -Wstrict-prototypes -Dlinux -DBCMDRIVER -Os                     \
+DHDCFLAGS = -Wall -Wno-array-bounds -Wstrict-prototypes -Dlinux -DBCMDRIVER -Os                     \
 	-DBCMDONGLEHOST -DUNRELEASEDCHIP -DBCMDMA32 -DWLBTAMP -DBCMFILEIMAGE  \
 	-DDHDTHREAD -DDHD_GPL -DDHD_SCHED -DDHD_DEBUG -DSDTEST -DBDC -DTOE    \
 	-DDHD_BCMEVENTS -DSHOW_EVENTS -DDONGLEOVERLAYS -DBCMDBG               \

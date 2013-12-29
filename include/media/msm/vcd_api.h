@@ -1,4 +1,4 @@
-/* Copyright (c) 2010-2012, Code Aurora Forum. All rights reserved.
+/* Copyright (c) 2010-2012, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -76,6 +76,7 @@ struct vcd_frame_data {
 	u32 intrlcd_ip_frm_tag;
 	u8 *desc_buf;
 	u32 desc_size;
+	struct ion_handle *buff_ion_handle;
 	struct vcd_aspect_ratio aspect_ratio_info;
 };
 
@@ -154,4 +155,5 @@ void vcd_response_handler(void);
 u8 vcd_get_num_of_clients(void);
 u32 vcd_get_ion_status(void);
 struct ion_client *vcd_get_ion_client(void);
+void vcd_set_is_encoding(bool encoding);
 #endif

@@ -20,7 +20,7 @@
 #include <mach/dma.h>
 #include <asm/mach/mmc.h>
 #include <asm/clkdev.h>
-#include <linux/msm_kgsl.h>
+#include <mach/kgsl.h>
 #include <linux/msm_rotator.h>
 #include <mach/msm_hsusb.h>
 #include "footswitch.h"
@@ -985,7 +985,7 @@ static struct resource kgsl_2d0_resources[] = {
 	{
 		.name = KGSL_2D0_REG_MEMORY,
 		.start = 0x04100000, /* Z180 base address */
-		.end = 0x0410FFFF,
+		.end = 0x04100FFF,
 		.flags = IORESOURCE_MEM,
 	},
 	{
@@ -1044,7 +1044,7 @@ static struct resource kgsl_2d1_resources[] = {
 	{
 		.name = KGSL_2D1_REG_MEMORY,
 		.start = 0x04200000, /* Z180 device 1 base address */
-		.end =   0x0420FFFF,
+		.end =   0x04200FFF,
 		.flags = IORESOURCE_MEM,
 	},
 	{
@@ -1711,7 +1711,7 @@ static struct msm_rot_clocks rotator_clocks[] = {
 	{
 		.clk_name = "core_clk",
 		.clk_type = ROTATOR_CORE_CLK,
-		.clk_rate = 160 * 1000 * 1000,
+		.clk_rate = 200 * 1000 * 1000,
 	},
 	{
 		.clk_name = "iface_clk",
@@ -1725,9 +1725,6 @@ static struct msm_rotator_platform_data rotator_pdata = {
 	.hardware_version_number = 0x01010307,
 	.rotator_clks = rotator_clocks,
 	.regulator_name = "fs_rot",
-#ifdef CONFIG_MSM_BUS_SCALING
-	.bus_scale_table = &rotator_bus_scale_pdata,
-#endif
 
 };
 
@@ -1956,7 +1953,7 @@ struct platform_device msm_device_gadget_peripheral = {
 		.coherent_dma_mask	= 0xffffffffULL,
 	},
 };
-#ifdef CONFIG_USB_EHCI_MSM_72K
+
 static struct resource resources_hsusb_host[] = {
 	{
 		.start	= 0x12500000,
@@ -1981,6 +1978,7 @@ struct platform_device msm_device_hsusb_host = {
 	},
 };
 
+#ifdef CONFIG_USB_EHCI_MSM_72K
 static struct platform_device *msm_host_devices[] = {
 	&msm_device_hsusb_host,
 };
@@ -2448,17 +2446,12 @@ struct msm_vidc_platform_data vidc_platform_data = {
 #ifdef CONFIG_MSM_BUS_SCALING
 	.vidc_bus_client_pdata = &vidc_bus_client_data,
 #endif
-#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
-	.memtype = ION_CP_MM_HEAP_ID,
 	.enable_ion = 1,
+        .secure_wb_heap = 0,
 	.cp_enabled = 0,
-#else
-	.memtype = MEMTYPE_SMI_KERNEL,
-	.enable_ion = 0,
-#endif
 	.disable_dmx = 0,
 	.disable_fullhd = 0,
-	.disable_turbo = 1
+	.disable_turbo = 0
 };
 
 struct platform_device msm_device_vidc = {
@@ -2718,7 +2711,7 @@ struct platform_device asoc_mvs_dai1 = {
 
 struct platform_device *msm_footswitch_devices[] = {
 	FS_8X60(FS_IJPEG,	"fs_ijpeg"),
-	/*FS_8X60(FS_MDP,	"fs_mdp"),*//*re-enable when find out why mdp_p can't turn off*/
+	FS_8X60(FS_MDP,	"fs_mdp"),
 	FS_8X60(FS_ROT,	"fs_rot"),
 	FS_8X60(FS_VED,	"fs_ved"),
 	FS_8X60(FS_VFE,	"fs_vfe"),
