@@ -37,6 +37,22 @@
 /*** Memory map ***/
 #define MSM_ION_HEAP_NUM      4
 
+#ifdef CONFIG_FB_MSM_TRIPLE_BUFFER
+#define MSM_FB_PRIM_BUF_SIZE (960 * ALIGN(540, 32) * 4 * 3)
+#else
+#define MSM_FB_PRIM_BUF_SIZE (960 * ALIGN(540, 32) * 4 * 2)
+#endif
+
+#ifdef CONFIG_FB_MSM_HDMI_MSM_PANEL
+#define MSM_FB_SIZE roundup(MSM_FB_PRIM_BUF_SIZE + 0x3F4800, 4096)
+#else
+#define MSM_FB_SIZE roundup(MSM_FB_PRIM_BUF_SIZE, 4096)
+#endif
+
+#define MSM_FB_WRITEBACK_SIZE        roundup((960 * ALIGN(540, 32) * 3 * 2), 4096)
+
+#define MSM_FB_WRITEBACK_BASE	     (MSM_ION_WB_BASE+MSM_ION_WB_SIZE) 
+
 // PMEM SMI
 #define MSM_SMI_SIZE          0x3500000
 #define KERNEL_SMI_SIZE       0x000000
@@ -166,14 +182,10 @@
 #define PYRAMID_AUD_REMO_PRES      PMGPIO(37)
 #define PYRAMID_WIFI_BT_SLEEP_CLK  PMGPIO(38)
 
-extern int panel_type;
 
 int __init pyramid_init_mmc(void);
 void __init pyramid_audio_init(void);
 int __init pyramid_init_keypad(void);
 int __init pyramid_wifi_init(void);
-void pyramid_init_fb(void);
-void pyramid_allocate_fb_region(void);
-void pyramid_mdp_writeback(void);
 
 #endif /* __ARCH_ARM_MACH_MSM_BOARD_PYRAMID_H */
