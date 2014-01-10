@@ -24,7 +24,6 @@
 #include <linux/kernel.h>
 #include <linux/spi/spi.h>
 #include <linux/platform_device.h>
-#include <linux/regulator/consumer.h>
 #include <mach/msm_fb.h>
 #include <mach/msm_iomap.h>
 #include <mach/panel_id.h>
@@ -40,159 +39,6 @@
 #endif
 
 void mdp_color_enhancement(const struct mdp_reg *reg_seq, int size);
-
-static struct regulator *l1_3v;
-static struct regulator *lvs1_1v8;
-static struct regulator *l4_1v8;
-
-/*
-TODO:
-1. move regulator initialization to pyramid_panel_init()
-*/
-static void pyramid_panel_power(int on)
-{
-	static int init;
-	int ret;
-	int rc;
-
-	PR_DISP_INFO("%s(%d): init=%d system_rev:%d\n", __func__, on, init, system_rev);
-
-	/* If panel is already on (or off), do nothing. */
-	if (!init) {
-		l1_3v = regulator_get(NULL, "8901_l1");
-		if (IS_ERR(l1_3v)) {
-			PR_DISP_ERR("%s: unable to get 8901_l1\n", __func__);
-			goto fail;
-		}
-		if (system_rev >= 1) {
-			l4_1v8 = regulator_get(NULL, "8901_l4");
-			if (IS_ERR(l4_1v8)) {
-				PR_DISP_ERR("%s: unable to get 8901_l4\n", __func__);
-				goto fail;
-			}
-		} else {
-			lvs1_1v8 = regulator_get(NULL, "8901_lvs1");
-			if (IS_ERR(lvs1_1v8)) {
-				PR_DISP_ERR("%s: unable to get 8901_lvs1\n", __func__);
-				goto fail;
-			}
-		}
-
-		ret = regulator_set_voltage(l1_3v, 2600000, 2600000);
-		if (ret) {
-			PR_DISP_ERR("%s: error setting l1_3v voltage\n", __func__);
-			goto fail;
-		}
-
-		if (system_rev >= 1) {
-			ret = regulator_set_voltage(l4_1v8, 1800000, 1800000);
-			if (ret) {
-				PR_DISP_ERR("%s: error setting l4_1v8 voltage\n", __func__);
-				goto fail;
-			}
-		}
-
-		/* LCM Reset */
-		rc = gpio_request(GPIO_LCM_RST_N,
-				"LCM_RST_N");
-		if (rc) {
-			printk(KERN_ERR "%s:LCM gpio %d request"
-					"failed\n", __func__,
-					GPIO_LCM_RST_N);
-			return;
-		}
-
-		init = 1;
-	}
-
-	if (!l1_3v || IS_ERR(l1_3v)) {
-		PR_DISP_ERR("%s: l1_3v is not initialized\n", __func__);
-		return;
-	}
-
-	if (system_rev >= 1) {
-		if (!l4_1v8 || IS_ERR(l4_1v8)) {
-			PR_DISP_ERR("%s: l4_1v8 is not initialized\n", __func__);
-			return;
-		}
-	} else {
-		if (!lvs1_1v8 || IS_ERR(lvs1_1v8)) {
-			PR_DISP_ERR("%s: lvs1_1v8 is not initialized\n", __func__);
-			return;
-		}
-	}
-	if (on) {
-		if (regulator_enable(l1_3v)) {
-			PR_DISP_ERR("%s: Unable to enable the regulator:"
-					" l1_3v\n", __func__);
-			return;
-		}
-		hr_msleep(5);
-
-		if (system_rev >= 1) {
-			if (regulator_enable(l4_1v8)) {
-				PR_DISP_ERR("%s: Unable to enable the regulator:"
-						" l4_1v8\n", __func__);
-				return;
-			}
-		} else {
-
-			if (regulator_enable(lvs1_1v8)) {
-				PR_DISP_ERR("%s: Unable to enable the regulator:"
-						" lvs1_1v8\n", __func__);
-				return;
-			}
-		}
-
-		if (init == 1) {
-			init = 2;
-
-			return;
-		} else {
-			hr_msleep(10);
-			gpio_set_value(GPIO_LCM_RST_N, 1);
-			hr_msleep(1);
-			gpio_set_value(GPIO_LCM_RST_N, 0);
-			hr_msleep(1);
-			gpio_set_value(GPIO_LCM_RST_N, 1);
-			hr_msleep(20);
-		}
-	} else {
-		gpio_set_value(GPIO_LCM_RST_N, 0);
-		hr_msleep(5);
-		if (system_rev >= 1) {
-			if (regulator_disable(l4_1v8)) {
-				PR_DISP_ERR("%s: Unable to enable the regulator:"
-						" l4_1v8\n", __func__);
-				return;
-			}
-		} else {
-			if (regulator_disable(lvs1_1v8)) {
-				PR_DISP_ERR("%s: Unable to enable the regulator:"
-						" lvs1_1v8\n", __func__);
-				return;
-			}
-		}
-		hr_msleep(5);
-		if (regulator_disable(l1_3v)) {
-			PR_DISP_ERR("%s: Unable to enable the regulator:"
-					" l1_3v\n", __func__);
-			return;
-		}
-	}
-	return;
-
-fail:
-	if (l1_3v)
-		regulator_put(l1_3v);
-	if (system_rev >= 1) {
-		if (l4_1v8)
-			regulator_put(l4_1v8);
-	} else {
-		if (lvs1_1v8)
-			regulator_put(lvs1_1v8);
-	}
-}
 
 /*
 TODO:
@@ -447,20 +293,7 @@ static struct lcdc_platform_data dtv_pdata = {
 };
 #endif
 
-static int mipi_panel_power(int on)
-{
-	int flag_on = !!on;
-	static int mipi_power_save_on;
 
-	if (mipi_power_save_on == flag_on)
-		return 0;
-
-	mipi_power_save_on = flag_on;
-
-	pyramid_panel_power(on);
-
-	return 0;
-}
 
 static struct lcdc_platform_data lcdc_pdata = {
 	.lcdc_power_save   = lcdc_panel_power,
@@ -468,10 +301,10 @@ static struct lcdc_platform_data lcdc_pdata = {
 
 /* The solution provide by Novatek to fixup the problem of blank screen while
  * performing static electric strick. Only AUO panel need this function.
- *
+ */
 int pyd_esd_fixup(uint32_t mfd_data)
 {
-	* do two read_scan_line consecutively to avoid flicking 
+	/* do two read_scan_line consecutively to avoid flicking */
 	if (mipi_novatek_read_scan_line() == 0xf7ff) {
 		hr_msleep(1);
 		if (mipi_novatek_read_scan_line() == 0xf7ff) {
@@ -481,11 +314,10 @@ int pyd_esd_fixup(uint32_t mfd_data)
 	}
 
 	return 0;
-}*/
+}
 
 static struct mipi_dsi_platform_data mipi_pdata = {
 	.vsync_gpio		= 28,
-	.dsi_power_save		= mipi_panel_power,
 };
 
 static struct platform_device mipi_dsi_video_sharp_wvga_panel_device = {
@@ -607,13 +439,6 @@ static struct platform_device msm_fb_device = {
 	.name   = "msm_fb",
 	.id     = 0,
 	.dev.platform_data = &msm_fb_pdata,
-};
-
-int mdp_core_clk_rate_table[] = {
-	59080000,
-	128000000,
-	160000000,
-	200000000,
 };
 
 struct mdp_reg pyd_color_v11[] = {
@@ -1194,6 +1019,13 @@ static struct gamma_curvy gamma_tbl = {
 };
 #endif
 
+int mdp_core_clk_rate_table[] = {
+	266667000,
+	266667000,
+	266667000,
+	266667000,
+};
+
 static struct msm_panel_common_pdata mdp_pdata = {
 	.gpio = 28,
 	.mdp_core_clk_rate = 266667000,
@@ -1247,7 +1079,7 @@ int __init pyd_init_panel(struct resource *res, size_t size)
 	msm_fb_device.resource = res;
 	msm_fb_device.num_resources = size;
 
-#if 0
+#if 1
 	/* Cancel the fixup temporally due to it's cause flicking problem. */
 	if (panel_type == PANEL_ID_PYD_AUO_NT)
 		mipi_pdata.esd_fixup = pyd_esd_fixup;

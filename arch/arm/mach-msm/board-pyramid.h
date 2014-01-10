@@ -20,6 +20,7 @@
 #define __ARCH_ARM_MACH_MSM_BOARD_PYRAMID_H
 
 #include <mach/board.h>
+#include <mach/msm_memtypes.h>
 
 #define PYRAMID_PROJECT_NAME	"pyramid"
 
@@ -35,8 +36,8 @@
 #endif
 
 /*** Memory map ***/
-#define MSM_ION_HEAP_NUM      4
-
+#define MSM_ION_HEAP_NUM      5
+/*
 #ifdef CONFIG_FB_MSM_TRIPLE_BUFFER
 #define MSM_FB_PRIM_BUF_SIZE (960 * ALIGN(540, 32) * 4 * 3)
 #else
@@ -51,10 +52,11 @@
 
 #define MSM_FB_WRITEBACK_SIZE        roundup((960 * ALIGN(540, 32) * 3 * 2), 4096)
 
-#define MSM_FB_WRITEBACK_BASE	     (MSM_ION_WB_BASE+MSM_ION_WB_SIZE) 
+#define MSM_FB_WRITEBACK_BASE	     (MSM_ION_WB_BASE+MSM_ION_WB_SIZE)
+*/ 
 
 // PMEM SMI
-#define MSM_SMI_SIZE          0x3500000
+#define MSM_SMI_SIZE          0x3300000
 #define KERNEL_SMI_SIZE       0x000000
 #define USER_SMI_SIZE         (MSM_SMI_SIZE - KERNEL_SMI_SIZE)
 #define MSM_PMEM_SMIPOOL_SIZE USER_SMI_SIZE
@@ -65,11 +67,12 @@
 
 // ION SMI
 #define MSM_ION_MM_SIZE       0x2D00000
-#define MSM_SMI_ION_SIZE      0x2D00000
+#define MSM_ION_MM_FW_SIZE    0x200000
+#define MSM_SMI_ION_SIZE      0x2E00000
 
 // ION
 #define MSM_ION_WB_SIZE       0x2FD000
-#define MSM_ION_SF_SIZE       0x3200000
+#define MSM_ION_SF_SIZE       0x2C00000
 
 // Base addresses
 #define MSM_SMI_BASE          (MSM_ION_MM_BASE+MSM_SMI_ION_SIZE)
@@ -187,5 +190,9 @@ int __init pyramid_init_mmc(void);
 void __init pyramid_audio_init(void);
 int __init pyramid_init_keypad(void);
 int __init pyramid_wifi_init(void);
+void pyramid_init_fb(void);
+void pyramid_allocate_fb_region(void);
+void __init pyramid_mdp_writeback(struct memtype_reserve* reserve_table);
+void __init msm_fb_add_devices(void);
 
 #endif /* __ARCH_ARM_MACH_MSM_BOARD_PYRAMID_H */

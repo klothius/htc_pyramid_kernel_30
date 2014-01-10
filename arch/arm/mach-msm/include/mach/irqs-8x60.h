@@ -122,6 +122,7 @@
 #define GFX3D_IRQ				(GIC_SPI_START + 80)
 #define GFX2D0_IRQ				(GIC_SPI_START + 81)
 #define DSI_IRQ					(GIC_SPI_START + 82)
+#define DSI1_IRQ				(GIC_SPI_START + 82)
 #define CSI_1_IRQ				(GIC_SPI_START + 83)
 #define CSI_0_IRQ				(GIC_SPI_START + 84)
 #define LPASS_SCSS_AUDIO_IF_OUT0_IRQ		(GIC_SPI_START + 85)
